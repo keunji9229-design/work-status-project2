@@ -316,28 +316,14 @@
             databaseURL: "https://hp-report2-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
-        // 🚨 키 입력 문제 진단을 위해 아래 두 줄을 주석 처리(앞에 // 추가)합니다.
-        //    (이렇게 하면 데이터 저장 및 불러오기 기능은 작동하지 않습니다.)
-        // const app = firebase.initializeApp(firebaseConfig);
-        // const database = app.database();
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = app.database();
 
         // 전역 변수
         let currentDate = new Date();
         let reports = {};
         let schedules = {};
         let selectedMember = null;
-        
-        // 🚨 데이터베이스가 비활성화되었으므로 database 변수 대신 빈 객체를 사용하도록 더미 설정합니다.
-        //    (이렇게 해야 나머지 스크립트에서 'database' 변수 사용 시 오류가 나지 않습니다.)
-        const database = {
-             ref: () => ({ on: (event, callback) => {
-                 if (event === 'value') {
-                     // 더미 데이터를 반환하여 오류를 피합니다.
-                     setTimeout(() => callback({ val: () => ({}) }), 100); 
-                 }
-             }, remove: () => {}, set: () => {} })
-        };
-
 
         // 초기화
         document.addEventListener('DOMContentLoaded', function() {
@@ -458,11 +444,6 @@
             document.getElementById('reportForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // 🚨 Firebase가 비활성화되어 있으므로, 데이터 제출 시 알림만 띄웁니다.
-                showAlert('데이터베이스가 비활성화되어 저장이 불가능합니다. 키 입력 테스트를 완료하고 다시 Firebase 연결을 활성화하세요.');
-                cancelEdit();
-                
-                /* // 원본 저장 로직 (Firebase 활성화 시 사용)
                 const editId = document.getElementById('editId').value;
                 const projectSelect = document.getElementById('projectSelect');
                 const newProjectInput = document.getElementById('newProjectInput');
@@ -507,7 +488,6 @@
                 
                 showAlert(editId ? '수정되었습니다!' : '제출되었습니다!');
                 cancelEdit();
-                */
             });
 
             // Cancel 버튼
@@ -538,22 +518,23 @@
             document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
             document.getElementById('todayBtn').addEventListener('click', goToday);
 
-            // 🚨 Firebase 실시간 리스너는 현재 비활성화되어 있습니다.
-            // database.ref('reports').on('value', (snapshot) => {
-            //     reports = snapshot.val() || {};
-            //     loadProjectList();
-            //     loadProjectView();
-            //     loadMemberView();
-            //     renderCalendar();
-            // });
+            // Firebase 실시간 리스너
+            database.ref('reports').on('value', (snapshot) => {
+                reports = snapshot.val() || {};
+                loadProjectList();
+                loadProjectView();
+                loadMemberView();
+                renderCalendar();
+            });
 
-            // database.ref('schedules').on('value', (snapshot) => {
-            //     schedules = snapshot.val() || {};
-            //     renderCalendar();
-            // });
-            // 대신, 초기 로드만 수행합니다.
-            loadProjectList();
+            database.ref('schedules').on('value', (snapshot) => {
+                schedules = snapshot.val() || {};
+                renderCalendar();
+            });
+
+            // 초기 로드
             renderCalendar();
+            loadProjectList();
         });
 
         function applyBannerColor(gradient, textColor) {
@@ -1079,11 +1060,6 @@
             document.getElementById('quickScheduleForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // 🚨 Firebase가 비활성화되어 있으므로, 데이터 제출 시 알림만 띄웁니다.
-                showAlert('데이터베이스가 비활성화되어 저장이 불가능합니다.');
-                closeModal();
-                /*
-                // 원본 저장 로직
                 const schedule = {
                     id: Date.now().toString(),
                     date: this.scheduleDate.value,
@@ -1097,7 +1073,6 @@
 
                 showAlert('일정이 추가되었습니다!');
                 closeModal();
-                */
             });
 
             document.getElementById('modal').classList.add('show');
@@ -1184,11 +1159,6 @@
             document.getElementById('editScheduleFormModal').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // 🚨 Firebase가 비활성화되어 있으므로, 데이터 제출 시 알림만 띄웁니다.
-                showAlert('데이터베이스가 비활성화되어 저장이 불가능합니다.');
-                closeModal();
-                /*
-                // 원본 저장 로직
                 const updated = {
                     id: id,
                     date: this.scheduleDate.value,
@@ -1202,7 +1172,6 @@
 
                 showAlert('일정이 수정되었습니다!');
                 closeModal();
-                */
             });
 
             document.getElementById('modal').classList.add('show');
@@ -1211,8 +1180,9 @@
         function deleteSchedule(id) {
             if (!confirm('이 일정을 삭제하시겠습니까?')) return;
 
-            // database.ref('schedules/' + id).remove();
-            showAlert('데이터베이스가 비활성화되어 삭제가 불가능합니다.');
+            database.ref('schedules/' + id).remove();
+
+            showAlert('일정이 삭제되었습니다');
             closeModal();
         }
 
@@ -1277,22 +1247,24 @@
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('form').classList.add('active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         function deleteReport(id) {
             if (!confirm('이 보고서를 삭제하시겠습니까?')) return;
 
-            // database.ref('reports/' + id).remove();
-            showAlert('데이터베이스가 비활성화되어 삭제가 불가능합니다.');
+            database.ref('reports/' + id).remove();
+
+            showAlert('보고서가 삭제되었습니다');
             closeModal();
         }
 
         function deleteProject(name) {
             if (!confirm(`"${name}" 프로젝트의 모든 보고서를 삭제하시겠습니까?`)) return;
 
-            // showAlert('데이터베이스가 비활성화되어 삭제가 불가능합니다.');
-            closeModal();
-            
-            /*
             const toDelete = Object.values(reports).filter(r => r.project === name);
             toDelete.forEach(r => {
                 database.ref('reports/' + r.id).remove();
@@ -1300,16 +1272,12 @@
 
             showAlert('프로젝트가 삭제되었습니다');
             closeModal();
-            */
         }
 
         function addComment(rid) {
             const text = document.getElementById(`comment-${rid}`).value.trim();
             if (!text) return;
 
-            showAlert('데이터베이스가 비활성화되어 댓글 작성이 불가능합니다.');
-            
-            /*
             const r = reports[rid];
             if (!r) return;
 
@@ -1323,23 +1291,17 @@
 
             database.ref('reports/' + rid + '/comments').set(comments);
             showProjectDetail(r.project);
-            */
         }
 
         function deleteComment(rid, cid) {
             if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
 
-            // database.ref('reports/' + rid + '/comments').set(comments);
-            showAlert('데이터베이스가 비활성화되어 삭제가 불가능합니다.');
-            
-            /*
             const r = reports[rid];
             if (!r) return;
 
             const comments = (r.comments || []).filter(c => c.id !== cid);
             database.ref('reports/' + rid + '/comments').set(comments);
             showProjectDetail(r.project);
-            */
         }
 
         function cancelEdit() {
