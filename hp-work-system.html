@@ -388,11 +388,13 @@
                 if (this.value === '__new__') {
                     newInput.style.display = 'block';
                     newInput.required = true;
+                    newInput.value = '';
                     document.getElementById('progressSlider').value = 0;
                     document.getElementById('progressValue').textContent = 0;
                 } else {
                     newInput.style.display = 'none';
                     newInput.required = false;
+                    newInput.value = '';
                     if (this.value && reports) {
                         const projectReports = Object.values(reports).filter(r => r.project === this.value);
                         if (projectReports.length > 0) {
@@ -628,10 +630,13 @@
         function showProjectDetail(name) {
             const proj = Object.values(reports).filter(r => r.project === name).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            document.getElementById('modalTitle').innerHTML = `
-                ${name} 
-                <button class="btn btn-delete btn-small" onclick="deleteProject('${name}')">프로젝트 삭제</button>
-            `;
+            const titleDiv = document.getElementById('modalTitle');
+            titleDiv.textContent = name + ' ';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-delete btn-small';
+            deleteBtn.textContent = '프로젝트 삭제';
+            deleteBtn.onclick = () => deleteProject(name);
+            titleDiv.appendChild(deleteBtn);
 
             const statusMap = {pending: '시작 전', progress: '진행중', hold: '보류', complete: '완료'};
             let html = '';
@@ -660,25 +665,41 @@
                                             <div class="comment-text">${c.text}</div>
                                             <div class="comment-date">${c.date}</div>
                                         </div>
-                                        <button class="btn btn-delete btn-small" onclick="deleteComment('${r.id}', '${c.id}')">Delete</button>
+                                        <button class="btn btn-delete btn-small" data-action="deleteComment" data-rid="${r.id}" data-cid="${c.id}">Delete</button>
                                     </div>
                                 `).join('')}
                             </div>
                             <div style="display: flex; gap: 10px; align-items: flex-start;">
                                 <textarea class="comment-input" placeholder="댓글 작성" id="comment-${r.id}" style="flex: 1; margin-bottom: 0;"></textarea>
-                                <button class="btn btn-primary btn-small" onclick="addComment('${r.id}')" style="margin-top: 0; white-space: nowrap;">Add</button>
+                                <button class="btn btn-primary btn-small" data-action="addComment" data-rid="${r.id}" style="margin-top: 0; white-space: nowrap;">Add</button>
                             </div>
                         </div>
 
                         <div class="btn-group" style="margin-top: 16px;">
-                            <button class="btn btn-primary btn-small" onclick="editReport('${r.id}')">Edit</button>
-                            <button class="btn btn-delete btn-small" onclick="deleteReport('${r.id}')">Delete</button>
+                            <button class="btn btn-primary btn-small" data-action="editReport" data-rid="${r.id}">Edit</button>
+                            <button class="btn btn-delete btn-small" data-action="deleteReport" data-rid="${r.id}">Delete</button>
                         </div>
                     </div>
                 `;
             });
 
             document.getElementById('modalBody').innerHTML = html;
+            
+            // 이벤트 위임으로 버튼 클릭 처리
+            document.getElementById('modalBody').onclick = function(e) {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                
+                const action = btn.dataset.action;
+                const rid = btn.dataset.rid;
+                const cid = btn.dataset.cid;
+                
+                if (action === 'editReport') editReport(rid);
+                else if (action === 'deleteReport') deleteReport(rid);
+                else if (action === 'addComment') addComment(rid);
+                else if (action === 'deleteComment') deleteComment(rid, cid);
+            };
+            
             document.getElementById('modal').classList.add('show');
         }
 
@@ -790,9 +811,10 @@
                 
                 completed.forEach(p => {
                     html += `
-                        <div class="completed-project-card" data-project-name="${p.name.toLowerCase()}" 
+                        <div class="completed-project-card" 
+                            data-project-name="${p.name.toLowerCase()}"
+                            data-project-real-name="${p.name}"
                             style="border: 1px solid ${p.color}; background: ${p.color}20; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" 
-                            onclick="closeModal(); setTimeout(() => showProjectDetail('${p.name}'), 100);"
                             onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.1)';"
                             onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
                             <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">${p.name}</div>
@@ -811,6 +833,15 @@
                 
                 html += '</div></div>';
                 document.getElementById('modalBody').innerHTML = html;
+                
+                // 완료 프로젝트 카드 클릭 이벤트
+                document.querySelectorAll('.completed-project-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const projectName = this.dataset.projectRealName;
+                        closeModal();
+                        setTimeout(() => showProjectDetail(projectName), 100);
+                    });
+                });
             }
             
             document.getElementById('modal').classList.add('show');
@@ -1164,15 +1195,19 @@
             document.querySelector('input[name="author"]').value = r.author;
             
             const sel = document.getElementById('projectSelect');
+            const newInput = document.getElementById('newProjectInput');
             const exists = Array.from(sel.options).some(opt => opt.value === r.project);
             
             if (exists) {
                 sel.value = r.project;
-                document.getElementById('newProjectInput').style.display = 'none';
+                newInput.style.display = 'none';
+                newInput.required = false;
+                newInput.value = '';
             } else {
                 sel.value = '__new__';
-                document.getElementById('newProjectInput').style.display = 'block';
-                document.getElementById('newProjectInput').value = r.project;
+                newInput.style.display = 'block';
+                newInput.required = true;
+                newInput.value = r.project;
             }
 
             document.querySelectorAll('#projectColorPalette .color-option').forEach(opt => {
@@ -1207,6 +1242,11 @@
             
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('form').classList.add('active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
             document.querySelectorAll('.tab')[0].classList.add('active');
             document.getElementById('form').classList.add('active');
 
@@ -1274,8 +1314,14 @@
             
             document.getElementById('progressSlider').value = 0;
             document.getElementById('progressValue').textContent = 0;
-            document.getElementById('newProjectInput').style.display = 'none';
+            
+            const newInput = document.getElementById('newProjectInput');
+            newInput.style.display = 'none';
+            newInput.required = false;
+            newInput.value = '';
+            
             document.getElementById('progressGroup').style.display = 'block';
+            document.getElementById('progressSlider').disabled = false;
             
             document.querySelectorAll('#projectColorPalette .color-option').forEach(o => o.classList.remove('selected'));
             document.querySelector('#projectColorPalette .color-option').classList.add('selected');
