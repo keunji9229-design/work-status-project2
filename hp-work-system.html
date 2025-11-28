@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>H&P NATURE KOREA (Realtime)</title>
+    <title>H&P NATURE KOREA</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
-        /* 고객님이 보내주신 CSS 그대로 유지 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8f9fa; min-height: 100vh; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden; }
@@ -70,6 +69,12 @@
         .status-progress { background: #dbeafe; color: #1e40af; }
         .status-hold { background: #fed7aa; color: #9a3412; }
         .status-complete { background: #d1fae5; color: #065f46; }
+        .member-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .member-card { padding: 20px; background: white; border-radius: 12px; cursor: pointer; transition: all 0.2s; border: 2px solid #f5f5f5; text-align: center; }
+        .member-card:hover { border-color: #1a1a1a; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .member-card.active { border-color: #1a1a1a; background: #fafafa; }
+        .member-name { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #1a1a1a; }
+        .member-count { font-size: 12px; color: #737373; }
         .timeline { margin-top: 20px; position: relative; }
         .timeline::before { content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px; background: #e5e5e5; }
         .timeline-item { padding: 20px 20px 20px 48px; margin-bottom: 20px; background: white; border-radius: 12px; border: 1px solid #f5f5f5; position: relative; transition: all 0.2s; }
@@ -111,16 +116,28 @@
         .report-detail p { margin-bottom: 10px; color: #525252; font-size: 14px; line-height: 1.6; }
         .progress-bar-container { width: 100%; height: 8px; background: #f5f5f5; border-radius: 4px; overflow: hidden; margin: 10px 0; }
         .progress-bar { height: 100%; background: #1a1a1a; transition: width 0.3s; }
+        .comment-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #f5f5f5; }
+        .comment-item { padding: 14px; background: white; border-radius: 10px; margin-bottom: 10px; border: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: flex-start; }
+        .comment-content { flex: 1; }
+        .comment-author { font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #1a1a1a; }
+        .comment-text { font-size: 14px; color: #525252; line-height: 1.5; }
+        .comment-date { font-size: 11px; color: #a3a3a3; margin-top: 6px; }
+        .comment-input { width: 100%; padding: 14px !important; min-height: 80px !important; border: 1px solid #e5e5e5 !important; font-size: 14px !important; margin-bottom: 10px; border-radius: 10px !important; background: white !important; line-height: 1.6 !important; }
+        .comment-input:focus { border-color: #1a1a1a !important; }
         .empty-state { text-align: center; padding: 60px 20px; color: #a3a3a3; font-size: 15px; }
         .alert { position: fixed; top: 24px; right: 24px; padding: 16px 24px; background: #1a1a1a; color: white; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 2000; animation: slideIn 0.3s; font-size: 14px; font-weight: 500; }
         @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        #completedProjectList::-webkit-scrollbar { width: 8px; }
+        #completedProjectList::-webkit-scrollbar-track { background: #f5f5f5; border-radius: 4px; }
+        #completedProjectList::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+        #completedProjectList::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
     </style>
 </head>
 <body>
     <div class="container">
         <header id="mainHeader">
             <h1>H&P NATURE KOREA</h1>
-            <button class="settings-btn" onclick="toggleSettings()">⚙️ Settings</button>
+            <button class="settings-btn" id="settingsBtn">⚙️ Settings</button>
             <div class="settings-panel" id="settingsPanel">
                 <div class="settings-title">Banner Color</div>
                 <div class="banner-color-palette">
@@ -141,10 +158,10 @@
         </header>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab(event, 'form')">Report</button>
-            <button class="tab" onclick="switchTab(event, 'projects')">By Project</button>
-            <button class="tab" onclick="switchTab(event, 'members')">By Member</button>
-            <button class="tab" onclick="switchTab(event, 'calendar')">Calendar</button>
+            <button class="tab active" data-tab="form">Report</button>
+            <button class="tab" data-tab="projects">By Project</button>
+            <button class="tab" data-tab="members">By Member</button>
+            <button class="tab" data-tab="calendar">Calendar</button>
         </div>
 
         <div class="content">
@@ -222,7 +239,7 @@
 
                     <div class="btn-group">
                         <button type="submit" class="btn btn-primary" id="submitBtn">Submit</button>
-                        <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancel</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -233,9 +250,7 @@
                         <span class="search-icon">🔍</span>
                         <input type="text" id="projectSearch" placeholder="프로젝트명으로 검색...">
                     </div>
-                    <button class="btn btn-secondary" onclick="showCompletedProjects()" style="white-space: nowrap;">
-                        ✓ Completed Projects
-                    </button>
+                    <button class="btn btn-secondary" id="completedProjectsBtn" style="white-space: nowrap;">✓ Completed Projects</button>
                 </div>
                 <div class="project-list" id="projectList"></div>
             </div>
@@ -245,12 +260,7 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" id="memberSearch" placeholder="담당자명으로 검색...">
                 </div>
-                <div class="form-group">
-                    <label>Select Member</label>
-                    <select id="memberSelect">
-                        <option value="">전체 담당자</option>
-                    </select>
-                </div>
+                <div class="member-cards" id="memberCards"></div>
                 <div class="timeline" id="memberTimeline"></div>
             </div>
 
@@ -258,9 +268,9 @@
                 <div class="calendar-container">
                     <div class="calendar-header">
                         <div class="calendar-nav">
-                            <button class="btn btn-secondary" onclick="changeMonth(-1)">◀</button>
-                            <button class="btn btn-secondary" onclick="goToday()">Today</button>
-                            <button class="btn btn-secondary" onclick="changeMonth(1)">▶</button>
+                            <button class="btn btn-secondary" id="prevMonth">◀</button>
+                            <button class="btn btn-secondary" id="todayBtn">Today</button>
+                            <button class="btn btn-secondary" id="nextMonth">▶</button>
                         </div>
                         <div class="calendar-title" id="calendarTitle"></div>
                     </div>
@@ -289,16 +299,14 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="modal-title" id="modalTitle"></h2>
-                <button class="modal-close" onclick="closeModal()">×</button>
+                <button class="modal-close" id="modalCloseBtn">×</button>
             </div>
             <div class="modal-body" id="modalBody"></div>
         </div>
     </div>
 
     <script>
-        // ===========================================
-        // 1. FIREBASE 설정 (보내주신 키 적용)
-        // ===========================================
+        // Firebase 설정
         const firebaseConfig = {
             apiKey: "AIzaSyCLVDDh4h0cCd6HJ_mAKjHxB3joxhZiZzE",
             authDomain: "hp-report2.firebaseapp.com",
@@ -311,445 +319,990 @@
         const app = firebase.initializeApp(firebaseConfig);
         const database = app.database();
 
-        // ===========================================
-        // 2. 전역 변수 및 초기화
-        // ===========================================
+        // 전역 변수
         let currentDate = new Date();
-        let reports = {}; // Firebase에서 받아온 데이터를 저장할 변수
+        let reports = {};
+        let schedules = {};
+        let selectedMember = null;
 
-        // DOM 로드 시 초기화
+        // 초기화
         document.addEventListener('DOMContentLoaded', function() {
-            // 날짜 초기화
             const today = new Date().toISOString().split('T')[0];
             document.querySelector('input[name="date"]').value = today;
 
-            // 이벤트 리스너 설정
-            setupEventListeners();
-            
-            // Firebase 실시간 리스너 시작
-            setupFirebaseListener();
-        });
-
-        // ===========================================
-        // 3. FIREBASE 실시간 연동 로직
-        // ===========================================
-        function setupFirebaseListener() {
-            // 'reports' 경로의 데이터가 변경될 때마다 실행
-            database.ref('reports').on('value', (snapshot) => {
-                const data = snapshot.val();
-                reports = data || {}; // 데이터가 없으면 빈 객체
-
-                // 데이터가 업데이트되면 화면 갱신
-                refreshAllViews();
-            }, (error) => {
-                console.error("Firebase 로드 실패:", error);
-                alert("데이터를 불러오는데 실패했습니다.");
-            });
-        }
-
-        // 모든 화면 갱신 (프로젝트, 멤버, 캘린더)
-        function refreshAllViews() {
-            renderProjectList();
-            renderMemberList();
-            renderCalendar();
-            updateProjectSelectOptions(); // 프로젝트 선택 옵션 갱신
-        }
-
-        // ===========================================
-        // 4. 데이터 저장 (쓰기) 로직
-        // ===========================================
-        function saveReport(e) {
-            e.preventDefault();
-
-            const form = document.getElementById('reportForm');
-            const projectSelect = document.getElementById('projectSelect');
-            const newProjectInput = document.getElementById('newProjectInput');
-            
-            let projectName = projectSelect.value;
-            if (projectName === '__new__') {
-                projectName = newProjectInput.value.trim();
-            }
-
-            if (!projectName) {
-                alert("프로젝트 이름을 선택하거나 입력해주세요.");
-                return;
-            }
-
-            const reportData = {
-                date: form.date.value,
-                author: form.author.value,
-                project: projectName,
-                color: document.getElementById('projectColor').value,
-                status: document.getElementById('statusSelect').value,
-                progress: document.getElementById('progressSlider').value,
-                completed: form.completed.value,
-                nextPlan: form.nextPlan.value,
-                issues: form.issues.value,
-                timestamp: Date.now() // 정렬용
-            };
-
-            // Firebase에 저장 (push)
-            database.ref('reports').push(reportData)
-                .then(() => {
-                    showAlert("보고서가 저장되었습니다.");
-                    resetForm();
-                })
-                .catch((error) => {
-                    console.error("저장 실패:", error);
-                    showAlert("저장에 실패했습니다.");
-                });
-        }
-
-        // ===========================================
-        // 5. 화면 렌더링 함수들 (읽기)
-        // ===========================================
-        
-        // [프로젝트별 보기 렌더링]
-        function renderProjectList() {
-            const list = document.getElementById('projectList');
-            const search = document.getElementById('projectSearch').value.toLowerCase();
-            list.innerHTML = '';
-
-            // 데이터를 프로젝트별로 그룹화
-            const grouped = {};
-            Object.keys(reports).forEach(key => {
-                const report = reports[key];
-                if (!grouped[report.project]) {
-                    grouped[report.project] = [];
-                }
-                grouped[report.project].push({ ...report, id: key });
-            });
-
-            Object.keys(grouped).forEach(projName => {
-                // 검색어 필터
-                if (search && !projName.toLowerCase().includes(search)) return;
-
-                const projReports = grouped[projName];
-                // 가장 최신 보고서 찾기
-                const latest = projReports.sort((a, b) => b.timestamp - a.timestamp)[0];
-
-                // 완료된 프로젝트 숨기기 (기본값)
-                if (latest.status === 'complete' && latest.progress == 100) return;
-
-                const card = document.createElement('div');
-                card.className = 'project-card';
-                card.style.borderColor = latest.color;
-                card.style.background = latest.color + '20'; // 투명도 추가
-                card.onclick = () => showProjectDetail(projName);
-
-                card.innerHTML = `
-                    <div class="project-name">${projName}</div>
-                    <div class="project-info">Last: ${latest.date} by ${latest.author}</div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${latest.progress}%; background: ${latest.color};"></div>
-                    </div>
-                    <div class="project-info" style="margin-top: 4px;">${latest.progress}%</div>
-                    <span class="status-badge status-${latest.status}">${latest.status}</span>
-                `;
-                list.appendChild(card);
-            });
-        }
-
-        // [멤버별 보기 렌더링]
-        function renderMemberList() {
-            const timeline = document.getElementById('memberTimeline');
-            const search = document.getElementById('memberSearch').value.toLowerCase();
-            const selectedMember = document.getElementById('memberSelect').value;
-            timeline.innerHTML = '';
-
-            // 보고서 배열로 변환 및 정렬
-            let reportArr = Object.keys(reports).map(key => ({...reports[key], id: key}));
-            reportArr.sort((a, b) => b.timestamp - a.timestamp);
-
-            // 담당자 목록 업데이트 (Select 옵션)
-            updateMemberSelectOptions(reportArr);
-
-            reportArr.forEach(report => {
-                if (search && !report.author.toLowerCase().includes(search)) return;
-                if (selectedMember && report.author !== selectedMember) return;
-
-                const item = document.createElement('div');
-                item.className = 'timeline-item';
-                item.style.borderLeft = `4px solid ${report.color}`;
-                item.innerHTML = `
-                    <div class="timeline-date">${report.date} | ${report.author}</div>
-                    <div class="timeline-content">
-                        <strong>${report.project}</strong> (${report.status})<br>
-                        ${report.completed}
-                    </div>
-                `;
-                timeline.appendChild(item);
-            });
-        }
-
-        // [캘린더 렌더링]
-        function renderCalendar() {
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const calendarTitle = document.getElementById('calendarTitle');
-            const calendarDays = document.getElementById('calendarDays');
-            const eventList = document.getElementById('eventList');
-
-            calendarTitle.textContent = `${year}년 ${month + 1}월`;
-            calendarDays.innerHTML = '';
-            eventList.innerHTML = '';
-
-            const firstDay = new Date(year, month, 1).getDay();
-            const lastDate = new Date(year, month + 1, 0).getDate();
-            const prevLastDate = new Date(year, month, 0).getDate();
-
-            // 이번 달 데이터 필터링
-            const monthEvents = [];
-            Object.keys(reports).forEach(key => {
-                const r = reports[key];
-                const d = new Date(r.date);
-                if (d.getFullYear() === year && d.getMonth() === month) {
-                    monthEvents.push({ ...r, id: key });
-                }
-            });
-
-            // 지난 달 날짜 채우기
-            for (let i = firstDay; i > 0; i--) {
-                const day = document.createElement('div');
-                day.className = 'calendar-day other-month';
-                day.innerHTML = `<span class="day-number">${prevLastDate - i + 1}</span>`;
-                calendarDays.appendChild(day);
-            }
-
-            // 이번 달 날짜 채우기
-            for (let i = 1; i <= lastDate; i++) {
-                const dayDiv = document.createElement('div');
-                dayDiv.className = 'calendar-day';
-                
-                // 오늘 날짜 표시
-                const today = new Date();
-                if (year === today.getFullYear() && month === today.getMonth() && i === today.getDate()) {
-                    dayDiv.classList.add('today');
-                }
-
-                // 날짜 포맷 (YYYY-MM-DD)
-                const dateStr = `${year}-${String(month + 1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-                
-                // 해당 날짜의 이벤트 찾기
-                const dayReports = monthEvents.filter(e => e.date === dateStr);
-
-                let html = `<span class="day-number">${i}</span>`;
-                if (dayReports.length > 0) {
-                    html += `<div class="day-events">`;
-                    dayReports.slice(0, 3).forEach(r => {
-                        html += `<div class="day-event" style="background:${r.color}40; border-left:2px solid ${r.color}" onclick="showProjectDetail('${r.project}')">
-                            ${r.project}
-                        </div>`;
-                    });
-                    if (dayReports.length > 3) html += `<div>+${dayReports.length - 3} more</div>`;
-                    html += `</div>`;
-                }
-                dayDiv.innerHTML = html;
-                calendarDays.appendChild(dayDiv);
-            }
-
-            // 하단 이벤트 리스트 (최신순)
-            monthEvents.sort((a, b) => b.timestamp - a.timestamp);
-            monthEvents.forEach(r => {
-                const item = document.createElement('div');
-                item.className = 'event-item';
-                item.style.borderLeft = `4px solid ${r.color}`;
-                item.innerHTML = `
-                    <div>
-                        <div class="event-title">${r.project} (${r.author})</div>
-                        <div class="event-date">${r.date}</div>
-                    </div>
-                `;
-                item.onclick = () => showProjectDetail(r.project);
-                eventList.appendChild(item);
-            });
-        }
-
-        // ===========================================
-        // 6. 유틸리티 및 이벤트 처리
-        // ===========================================
-        
-        function setupEventListeners() {
             // 탭 전환
-            window.switchTab = function(event, tabId) {
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-                event.currentTarget.classList.add('active');
-                
-                // 탭 전환 시 화면 갱신
-                if(tabId === 'projects') renderProjectList();
-                if(tabId === 'members') renderMemberList();
-                if(tabId === 'calendar') renderCalendar();
-            };
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(tabName).classList.add('active');
 
-            // 배너 설정
-            document.querySelectorAll('.banner-color-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    const gradient = this.dataset.gradient;
-                    const text = this.dataset.text;
-                    const header = document.getElementById('mainHeader');
-                    header.style.background = gradient;
-                    header.style.color = text;
-                    header.querySelector('h1').style.color = text;
-                    
-                    document.querySelectorAll('.banner-color-option').forEach(o => o.classList.remove('selected'));
-                    this.classList.add('selected');
-                    
-                    // 로컬 스토리지에 배너 설정 저장 (개인화 설정이므로 로컬 유지)
-                    localStorage.setItem('bannerGradient', gradient);
-                    localStorage.setItem('bannerText', text);
+                    if (tabName === 'projects') loadProjectView();
+                    else if (tabName === 'members') loadMemberView();
+                    else if (tabName === 'calendar') renderCalendar();
                 });
             });
 
-            // 저장된 배너 불러오기
+            // Settings 버튼
+            document.getElementById('settingsBtn').addEventListener('click', function() {
+                document.getElementById('settingsPanel').classList.toggle('show');
+            });
+
+            // 배너 색상
             const savedGradient = localStorage.getItem('bannerGradient');
             const savedText = localStorage.getItem('bannerText');
-            if(savedGradient) {
-                const header = document.getElementById('mainHeader');
-                header.style.background = savedGradient;
-                header.style.color = savedText;
-                header.querySelector('h1').style.color = savedText;
+            if (savedGradient && savedText) {
+                applyBannerColor(savedGradient, savedText);
+                document.querySelectorAll('.banner-color-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.dataset.gradient === savedGradient) opt.classList.add('selected');
+                });
             }
 
+            document.querySelectorAll('.banner-color-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.banner-color-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    const gradient = this.dataset.gradient;
+                    const textColor = this.dataset.text;
+                    applyBannerColor(gradient, textColor);
+                    localStorage.setItem('bannerGradient', gradient);
+                    localStorage.setItem('bannerText', textColor);
+                });
+            });
+
             // 프로젝트 색상 선택
-            document.querySelectorAll('#projectColorPalette .color-option').forEach(opt => {
-                opt.addEventListener('click', function() {
+            document.querySelectorAll('#projectColorPalette .color-option').forEach(option => {
+                option.addEventListener('click', function() {
                     document.querySelectorAll('#projectColorPalette .color-option').forEach(o => o.classList.remove('selected'));
                     this.classList.add('selected');
                     document.getElementById('projectColor').value = this.dataset.color;
                 });
             });
 
-            // 폼 리스너
-            document.getElementById('reportForm').addEventListener('submit', saveReport);
-            document.getElementById('projectSearch').addEventListener('input', renderProjectList);
-            document.getElementById('memberSearch').addEventListener('input', renderMemberList);
-            document.getElementById('memberSelect').addEventListener('change', renderMemberList);
-            
-            // 새 프로젝트 입력 토글
+            // 프로젝트 선택
             document.getElementById('projectSelect').addEventListener('change', function() {
-                const input = document.getElementById('newProjectInput');
+                const newInput = document.getElementById('newProjectInput');
                 if (this.value === '__new__') {
-                    input.style.display = 'block';
-                    input.focus();
+                    newInput.style.display = 'block';
+                    newInput.required = true;
+                    document.getElementById('progressSlider').value = 0;
+                    document.getElementById('progressValue').textContent = 0;
                 } else {
-                    input.style.display = 'none';
-                    // 기존 프로젝트 선택 시 색상/진척도 자동 세팅 가능 (생략)
+                    newInput.style.display = 'none';
+                    newInput.required = false;
+                    if (this.value && reports) {
+                        const projectReports = Object.values(reports).filter(r => r.project === this.value);
+                        if (projectReports.length > 0) {
+                            const latest = projectReports.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                            document.getElementById('progressSlider').value = latest.progress || 0;
+                            document.getElementById('progressValue').textContent = latest.progress || 0;
+                        }
+                    }
                 }
             });
 
-            // 진행률 슬라이더
-            document.getElementById('progressSlider').addEventListener('input', function() {
-                document.getElementById('progressValue').innerText = this.value;
+            // 상태 변경 시 진척도 자동 설정
+            document.getElementById('statusSelect').addEventListener('change', function() {
+                const pg = document.getElementById('progressGroup');
+                const slider = document.getElementById('progressSlider');
+                const value = document.getElementById('progressValue');
+                
+                if (this.value === 'pending') {
+                    pg.style.display = 'none';
+                    slider.value = 0;
+                    value.textContent = 0;
+                    slider.disabled = true;
+                } else if (this.value === 'complete') {
+                    pg.style.display = 'block';
+                    slider.value = 100;
+                    value.textContent = 100;
+                    slider.disabled = true;
+                } else if (this.value === 'progress') {
+                    pg.style.display = 'block';
+                    slider.disabled = false;
+                } else {
+                    pg.style.display = 'none';
+                    slider.disabled = true;
+                }
             });
+
+            // 진척도 슬라이더
+            document.getElementById('progressSlider').addEventListener('input', function() {
+                document.getElementById('progressValue').textContent = this.value;
+            });
+
+            // 검색
+            document.getElementById('projectSearch').addEventListener('input', loadProjectView);
+            document.getElementById('memberSearch').addEventListener('input', loadMemberView);
+
+            // 보고서 제출
+            document.getElementById('reportForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const editId = document.getElementById('editId').value;
+                const projectSelect = document.getElementById('projectSelect');
+                const newProjectInput = document.getElementById('newProjectInput');
+                
+                let projectName;
+                if (projectSelect.value === '__new__') {
+                    projectName = newProjectInput.value.trim();
+                } else {
+                    projectName = projectSelect.value;
+                }
+
+                if (!projectName) {
+                    alert('프로젝트를 선택하거나 입력하세요');
+                    return;
+                }
+
+                const status = document.querySelector('select[name="status"]').value;
+                let progress = 0;
+                if (status === 'complete') {
+                    progress = 100;
+                } else if (status === 'progress') {
+                    progress = parseInt(document.getElementById('progressSlider').value);
+                } else if (status === 'pending') {
+                    progress = 0;
+                }
+
+                const report = {
+                    id: editId || Date.now().toString(),
+                    date: document.querySelector('input[name="date"]').value,
+                    author: document.querySelector('input[name="author"]').value,
+                    project: projectName,
+                    color: document.getElementById('projectColor').value,
+                    status: status,
+                    progress: progress,
+                    completed: document.querySelector('textarea[name="completed"]').value,
+                    nextPlan: document.querySelector('textarea[name="nextPlan"]').value,
+                    issues: document.querySelector('textarea[name="issues"]').value,
+                    comments: editId && reports[editId] ? reports[editId].comments || [] : []
+                };
+
+                database.ref('reports/' + report.id).set(report);
+                
+                showAlert(editId ? '수정되었습니다!' : '제출되었습니다!');
+                cancelEdit();
+            });
+
+            // Cancel 버튼
+            document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
+
+            // 완료된 프로젝트 버튼
+            document.getElementById('completedProjectsBtn').addEventListener('click', showCompletedProjects);
+
+            // 모달 닫기
+            document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+            document.getElementById('modal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
+
+            // 설정 패널 외부 클릭
+            document.addEventListener('click', function(e) {
+                const panel = document.getElementById('settingsPanel');
+                const btn = document.getElementById('settingsBtn');
+                if (panel && panel.classList.contains('show')) {
+                    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                        panel.classList.remove('show');
+                    }
+                }
+            });
+
+            // 캘린더 버튼
+            document.getElementById('prevMonth').addEventListener('click', () => changeMonth(-1));
+            document.getElementById('nextMonth').addEventListener('click', () => changeMonth(1));
+            document.getElementById('todayBtn').addEventListener('click', goToday);
+
+            // Firebase 실시간 리스너
+            database.ref('reports').on('value', (snapshot) => {
+                reports = snapshot.val() || {};
+                loadProjectList();
+                loadProjectView();
+                loadMemberView();
+                renderCalendar();
+            });
+
+            database.ref('schedules').on('value', (snapshot) => {
+                schedules = snapshot.val() || {};
+                renderCalendar();
+            });
+
+            // 초기 로드
+            renderCalendar();
+            loadProjectList();
+        });
+
+        function applyBannerColor(gradient, textColor) {
+            const header = document.getElementById('mainHeader');
+            header.style.background = gradient;
+            header.style.color = textColor;
+            const btn = document.getElementById('settingsBtn');
+            btn.style.color = textColor;
+            btn.style.borderColor = textColor + '33';
         }
 
-        // 헬퍼 함수들
-        function updateProjectSelectOptions() {
-            const select = document.getElementById('projectSelect');
-            const currentVal = select.value;
-            // 중복 제거된 프로젝트 이름 목록
-            const projects = [...new Set(Object.values(reports).map(r => r.project))];
-            
-            select.innerHTML = '<option value="">기존 프로젝트 선택</option><option value="__new__">+ 새 프로젝트</option>';
-            projects.forEach(p => {
+        function loadProjectList() {
+            const projectGroups = {};
+            Object.values(reports).forEach(r => {
+                if (!projectGroups[r.project]) projectGroups[r.project] = [];
+                projectGroups[r.project].push(r);
+            });
+
+            const available = Object.keys(projectGroups).filter(name => {
+                const latest = projectGroups[name].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                return !(latest.status === 'complete' && latest.progress === 100);
+            });
+
+            const sel = document.getElementById('projectSelect');
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">기존 프로젝트 선택</option>';
+            available.sort().forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p;
                 opt.textContent = p;
-                select.appendChild(opt);
+                sel.appendChild(opt);
             });
-            select.value = currentVal;
+            const newOpt = document.createElement('option');
+            newOpt.value = '__new__';
+            newOpt.textContent = '+ 새 프로젝트';
+            sel.appendChild(newOpt);
+            if (cur && available.includes(cur)) sel.value = cur;
         }
 
-        function updateMemberSelectOptions(reportArr) {
-            const select = document.getElementById('memberSelect');
-            const currentVal = select.value;
-            const authors = [...new Set(reportArr.map(r => r.author))];
+        function loadProjectView() {
+            const search = document.getElementById('projectSearch').value.toLowerCase();
             
-            select.innerHTML = '<option value="">전체 담당자</option>';
-            authors.forEach(a => {
-                const opt = document.createElement('option');
-                opt.value = a;
-                opt.textContent = a;
-                select.appendChild(opt);
+            const groups = {};
+            Object.values(reports).forEach(r => {
+                if (!groups[r.project]) {
+                    groups[r.project] = { name: r.project, color: r.color, reports: [] };
+                }
+                groups[r.project].reports.push(r);
             });
-            select.value = currentVal;
-        }
 
-        // 모달 및 상세 보기
-        window.showProjectDetail = function(projName) {
-            const modal = document.getElementById('modal');
-            const title = document.getElementById('modalTitle');
-            const body = document.getElementById('modalBody');
-            
-            // 해당 프로젝트의 모든 보고서 가져오기
-            const projReports = Object.values(reports)
-                .filter(r => r.project === projName)
-                .sort((a, b) => b.timestamp - a.timestamp);
+            const active = Object.values(groups).filter(p => {
+                const latest = p.reports.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                return !(latest.status === 'complete' && latest.progress === 100);
+            });
 
-            title.textContent = projName;
-            body.innerHTML = '';
+            const list = document.getElementById('projectList');
+            list.innerHTML = '';
 
-            projReports.forEach(r => {
-                const div = document.createElement('div');
-                div.className = 'report-detail';
-                div.style.borderLeft = `4px solid ${r.color}`;
-                div.innerHTML = `
-                    <h4>${r.date} | ${r.author}</h4>
-                    <p><strong>Status:</strong> ${r.status} (${r.progress}%)</p>
-                    <p><strong>Completed:</strong> ${r.completed}</p>
-                    <p><strong>Next:</strong> ${r.nextPlan}</p>
-                    <p><strong>Issues:</strong> ${r.issues}</p>
+            active.forEach(p => {
+                if (search && !p.name.toLowerCase().includes(search)) return;
+                
+                const latest = p.reports.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.style.borderColor = p.color;
+                card.style.background = p.color + '20';
+                card.onclick = () => showProjectDetail(p.name);
+
+                const statusMap = {pending: '시작 전', progress: '진행중', hold: '보류', complete: '완료'};
+                const prog = latest.progress || 0;
+
+                card.innerHTML = `
+                    <div class="project-name">${p.name}</div>
+                    <div class="project-info">총 ${p.reports.length}개 보고서</div>
+                    <div class="project-info">최근: ${latest.date}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                        <span class="status-badge status-${latest.status}">${statusMap[latest.status]}</span>
+                        <span style="font-size: 24px; font-weight: 700; color: ${p.color};">${prog}%</span>
+                    </div>
+                    ${latest.status === 'progress' || latest.status === 'complete' ? `
+                    <div class="progress-bar-container" style="margin-top: 12px;">
+                        <div class="progress-bar" style="width: ${prog}%; background: ${p.color};"></div>
+                    </div>` : ''}
                 `;
-                body.appendChild(div);
+                list.appendChild(card);
             });
 
-            modal.classList.add('show');
-        };
+            if (list.children.length === 0) {
+                list.innerHTML = '<div class="empty-state">프로젝트가 없습니다</div>';
+            }
+        }
 
-        window.closeModal = function() {
-            document.getElementById('modal').classList.remove('show');
-        };
+        function showProjectDetail(name) {
+            const proj = Object.values(reports).filter(r => r.project === name).sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        window.toggleSettings = function() {
-            document.getElementById('settingsPanel').classList.toggle('show');
-        };
+            document.getElementById('modalTitle').innerHTML = `
+                ${name} 
+                <button class="btn btn-delete btn-small" onclick="deleteProject('${name}')">프로젝트 삭제</button>
+            `;
 
-        window.resetForm = function() {
+            const statusMap = {pending: '시작 전', progress: '진행중', hold: '보류', complete: '완료'};
+            let html = '';
+            proj.forEach(r => {
+                const comments = r.comments || [];
+                html += `
+                    <div class="report-detail" style="border-left: 4px solid ${r.color}">
+                        <h4>${r.date} - ${r.author}</h4>
+                        <span class="status-badge status-${r.status}">${statusMap[r.status]}</span>
+                        ${r.status === 'progress' || r.status === 'complete' ? `
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${r.progress}%; background: ${r.color};"></div>
+                        </div>
+                        <p><strong>진척도:</strong> ${r.progress}%</p>` : ''}
+                        <p><strong>완료:</strong> ${r.completed}</p>
+                        ${r.nextPlan ? `<p><strong>다음 일정:</strong> ${r.nextPlan}</p>` : ''}
+                        ${r.issues ? `<p><strong>이슈:</strong> ${r.issues}</p>` : ''}
+                        
+                        <div class="comment-section">
+                            <h4 style="margin-bottom: 8px;">Comments</h4>
+                            <div id="comments-${r.id}">
+                                ${comments.map(c => `
+                                    <div class="comment-item">
+                                        <div class="comment-content">
+                                            <div class="comment-author">${c.author}</div>
+                                            <div class="comment-text">${c.text}</div>
+                                            <div class="comment-date">${c.date}</div>
+                                        </div>
+                                        <button class="btn btn-delete btn-small" onclick="deleteComment('${r.id}', '${c.id}')">Delete</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                <textarea class="comment-input" placeholder="댓글 작성" id="comment-${r.id}" style="flex: 1; margin-bottom: 0;"></textarea>
+                                <button class="btn btn-primary btn-small" onclick="addComment('${r.id}')" style="margin-top: 0; white-space: nowrap;">Add</button>
+                            </div>
+                        </div>
+
+                        <div class="btn-group" style="margin-top: 16px;">
+                            <button class="btn btn-primary btn-small" onclick="editReport('${r.id}')">Edit</button>
+                            <button class="btn btn-delete btn-small" onclick="deleteReport('${r.id}')">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function loadMemberView() {
+            const search = document.getElementById('memberSearch').value.toLowerCase();
+            const members = {};
+            
+            Object.values(reports).forEach(r => {
+                if (!members[r.author]) members[r.author] = [];
+                members[r.author].push(r);
+            });
+
+            // 멤버 카드
+            const cardsDiv = document.getElementById('memberCards');
+            cardsDiv.innerHTML = '';
+
+            Object.keys(members).sort().forEach(member => {
+                if (search && !member.toLowerCase().includes(search)) return;
+                
+                const card = document.createElement('div');
+                card.className = 'member-card';
+                if (selectedMember === member) card.classList.add('active');
+                
+                card.innerHTML = `
+                    <div class="member-name">${member}</div>
+                    <div class="member-count">${members[member].length}개 보고서</div>
+                `;
+                
+                card.onclick = () => {
+                    selectedMember = member;
+                    loadMemberView();
+                };
+                
+                cardsDiv.appendChild(card);
+            });
+
+            // 타임라인
+            const timeline = document.getElementById('memberTimeline');
+            timeline.innerHTML = '';
+
+            let filtered = Object.values(reports);
+            if (selectedMember) filtered = filtered.filter(r => r.author === selectedMember);
+            if (search) filtered = filtered.filter(r => r.author.toLowerCase().includes(search));
+            filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (filtered.length === 0) {
+                timeline.innerHTML = '<div class="empty-state">보고서가 없습니다</div>';
+                return;
+            }
+
+            const statusMap = {pending: '시작 전', progress: '진행중', hold: '보류', complete: '완료'};
+            filtered.forEach(r => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+                item.id = `timeline-${r.id}`;
+                
+                const dotStyle = `<style>#timeline-${r.id}::before { background: ${r.color} !important; box-shadow: 0 0 0 2px ${r.color} !important; }</style>`;
+                
+                item.innerHTML = dotStyle + `
+                    <div class="timeline-date">${r.date} | ${r.author}</div>
+                    <div class="timeline-content">
+                        <strong>${r.project}</strong>
+                        <span class="status-badge status-${r.status}">${statusMap[r.status]}</span>
+                        ${r.status === 'progress' || r.status === 'complete' ? `
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${r.progress}%; background: ${r.color};"></div>
+                        </div>` : ''}
+                        <p style="margin-top: 8px;">${r.completed}</p>
+                    </div>
+                    <div class="btn-group" style="margin-top: 12px;">
+                        <button class="btn btn-primary btn-small" onclick="editReport('${r.id}')">Edit</button>
+                        <button class="btn btn-delete btn-small" onclick="deleteReport('${r.id}')">Delete</button>
+                    </div>
+                `;
+                timeline.appendChild(item);
+            });
+        }
+
+        function showCompletedProjects() {
+            const groups = {};
+            Object.values(reports).forEach(r => {
+                if (!groups[r.project]) {
+                    groups[r.project] = { name: r.project, color: r.color, reports: [] };
+                }
+                groups[r.project].reports.push(r);
+            });
+
+            const completed = Object.values(groups).filter(p => {
+                const latest = p.reports.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                return latest.status === 'complete' && latest.progress === 100;
+            }).map(p => {
+                const latest = p.reports.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                return { ...p, completedDate: latest.date };
+            }).sort((a, b) => new Date(b.completedDate) - new Date(a.completedDate));
+
+            document.getElementById('modalTitle').textContent = '✓ Completed Projects';
+            
+            if (completed.length === 0) {
+                document.getElementById('modalBody').innerHTML = '<div class="empty-state">완료된 프로젝트가 없습니다</div>';
+            } else {
+                let html = `
+                    <div class="search-box" style="margin-bottom: 20px;">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="completedProjectSearch" placeholder="완료된 프로젝트 검색..." onkeyup="filterCompletedProjects()">
+                    </div>
+                    <div id="completedProjectList" style="max-height: 500px; overflow-y: auto; padding-right: 8px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                `;
+                
+                completed.forEach(p => {
+                    html += `
+                        <div class="completed-project-card" data-project-name="${p.name.toLowerCase()}" 
+                            style="border: 1px solid ${p.color}; background: ${p.color}20; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s;" 
+                            onclick="closeModal(); setTimeout(() => showProjectDetail('${p.name}'), 100);"
+                            onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.1)';"
+                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                            <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">${p.name}</div>
+                            <div style="font-size: 13px; color: #737373; margin-bottom: 4px;">총 ${p.reports.length}개 보고서</div>
+                            <div style="font-size: 13px; color: #737373; margin-bottom: 12px;">완료일: ${p.completedDate}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="status-badge status-complete">완료</span>
+                                <span style="font-size: 20px; font-weight: 700; color: ${p.color};">100%</span>
+                            </div>
+                            <div class="progress-bar-container" style="margin-top: 12px;">
+                                <div class="progress-bar" style="width: 100%; background: ${p.color};"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += '</div></div>';
+                document.getElementById('modalBody').innerHTML = html;
+            }
+            
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function filterCompletedProjects() {
+            const search = document.getElementById('completedProjectSearch').value.toLowerCase();
+            document.querySelectorAll('.completed-project-card').forEach(card => {
+                card.style.display = card.dataset.projectName.includes(search) ? 'block' : 'none';
+            });
+        }
+
+        function getContrastColor(hex) {
+            const h = hex.replace('#', '');
+            const r = parseInt(h.substr(0, 2), 16);
+            const g = parseInt(h.substr(2, 2), 16);
+            const b = parseInt(h.substr(4, 2), 16);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return yiq >= 128 ? '#1a1a1a' : '#ffffff';
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            document.getElementById('calendarTitle').textContent = `${year}년 ${month + 1}월`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const lastDate = new Date(year, month + 1, 0).getDate();
+            const prevLastDate = new Date(year, month, 0).getDate();
+
+            const events = {};
+
+            Object.values(reports).forEach(r => {
+                if (!events[r.date]) events[r.date] = [];
+                events[r.date].push({ ...r, type: 'report', title: r.project });
+            });
+
+            Object.values(schedules).forEach(s => {
+                if (!events[s.date]) events[s.date] = [];
+                events[s.date].push({ ...s, type: 'schedule' });
+            });
+
+            const today = new Date().toISOString().split('T')[0];
+            const days = document.getElementById('calendarDays');
+            days.innerHTML = '';
+
+            // 이전 달
+            for (let i = firstDay - 1; i >= 0; i--) {
+                const day = prevLastDate - i;
+                const div = document.createElement('div');
+                div.className = 'calendar-day other-month';
+                div.innerHTML = `<div class="day-number">${day}</div>`;
+                days.appendChild(div);
+            }
+
+            // 현재 달
+            for (let day = 1; day <= lastDate; day++) {
+                const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const dayEvents = events[date] || [];
+                
+                const div = document.createElement('div');
+                div.className = 'calendar-day';
+                if (dayOfWeek === 0) div.classList.add('sunday');
+                if (dayOfWeek === 6) div.classList.add('saturday');
+                if (date === today) div.classList.add('today');
+
+                let content = `<div class="day-number">${day}</div>`;
+                
+                if (dayEvents.length > 0) {
+                    content += '<div class="day-events">';
+                    dayEvents.slice(0, 2).forEach(e => {
+                        const bg = e.color || '#667eea';
+                        const title = e.title || e.project;
+                        const textColor = getContrastColor(bg);
+                        content += `<div class="day-event" style="background:${bg}; color:${textColor};" data-id="${e.id}" data-type="${e.type}">${title}</div>`;
+                    });
+                    if (dayEvents.length > 2) {
+                        content += `<div style="font-size:10px; color:#6c757d;">+${dayEvents.length - 2} more</div>`;
+                    }
+                    content += '</div>';
+                }
+
+                div.innerHTML = content;
+                
+                div.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('day-event')) {
+                        const id = e.target.dataset.id;
+                        const type = e.target.dataset.type;
+                        if (type === 'schedule') {
+                            showScheduleDetail(id);
+                        } else {
+                            const rep = reports[id];
+                            if (rep) showProjectDetail(rep.project);
+                        }
+                    } else if (!div.classList.contains('other-month')) {
+                        openScheduleForm(date);
+                    }
+                });
+
+                days.appendChild(div);
+            }
+
+            // 다음 달
+            const remaining = 42 - (firstDay + lastDate);
+            for (let day = 1; day <= remaining; day++) {
+                const div = document.createElement('div');
+                div.className = 'calendar-day other-month';
+                div.innerHTML = `<div class="day-number">${day}</div>`;
+                days.appendChild(div);
+            }
+
+            showMonthEvents();
+        }
+
+        function showMonthEvents() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            const monthReports = Object.values(reports).filter(r => {
+                const d = new Date(r.date);
+                return d.getFullYear() === year && d.getMonth() === month;
+            });
+            
+            const monthSchedules = Object.values(schedules).filter(s => {
+                const d = new Date(s.date);
+                return d.getFullYear() === year && d.getMonth() === month;
+            });
+
+            const all = [
+                ...monthReports.map(r => ({ ...r, type: 'report', title: r.project })),
+                ...monthSchedules.map(s => ({ ...s, type: 'schedule' }))
+            ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const list = document.getElementById('eventList');
+            
+            if (all.length === 0) {
+                list.innerHTML = '<div class="empty-state">이번 달 이벤트가 없습니다</div>';
+                return;
+            }
+
+            list.innerHTML = all.map(e => {
+                const title = e.title || e.project;
+                const color = e.color || '#667eea';
+                
+                if (e.type === 'schedule') {
+                    return `
+                        <div class="event-item">
+                            <div>
+                                <div class="event-date" style="color:${color}">${e.date}</div>
+                                <div class="event-title">${title}</div>
+                            </div>
+                            <div class="btn-group">
+                                <button class="btn btn-primary btn-small" onclick="editSchedule('${e.id}')">Edit</button>
+                                <button class="btn btn-delete btn-small" onclick="deleteSchedule('${e.id}')">Delete</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="event-item">
+                            <div>
+                                <div class="event-date">${e.date} | ${e.author}</div>
+                                <div class="event-title">${title} (${e.progress || 0}%)</div>
+                            </div>
+                            <button class="btn btn-delete btn-small" onclick="deleteReport('${e.id}')">Delete</button>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function openScheduleForm(date) {
+            document.getElementById('modalTitle').textContent = '일정 추가';
+            document.getElementById('modalBody').innerHTML = `
+                <form id="quickScheduleForm">
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" name="scheduleDate" value="${date}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" name="scheduleTitle" placeholder="일정 제목" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Memo</label>
+                        <textarea name="scheduleMemo" placeholder="메모"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Color</label>
+                        <div class="color-palette" id="quickScheduleColorPalette">
+                            <div class="color-option selected" data-color="#ef5350" style="background:#ef5350"></div>
+                            <div class="color-option" data-color="#ab47bc" style="background:#ab47bc"></div>
+                            <div class="color-option" data-color="#5c6bc0" style="background:#5c6bc0"></div>
+                            <div class="color-option" data-color="#42a5f5" style="background:#42a5f5"></div>
+                            <div class="color-option" data-color="#26a69a" style="background:#26a69a"></div>
+                            <div class="color-option" data-color="#66bb6a" style="background:#66bb6a"></div>
+                            <div class="color-option" data-color="#ffca28" style="background:#ffca28"></div>
+                            <div class="color-option" data-color="#ff7043" style="background:#ff7043"></div>
+                        </div>
+                        <input type="hidden" id="quickScheduleColor" value="#ef5350">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Schedule</button>
+                </form>
+            `;
+
+            document.querySelectorAll('#quickScheduleColorPalette .color-option').forEach(opt => {
+                opt.addEventListener('click', function() {
+                    document.querySelectorAll('#quickScheduleColorPalette .color-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('quickScheduleColor').value = this.dataset.color;
+                });
+            });
+
+            document.getElementById('quickScheduleForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const schedule = {
+                    id: Date.now().toString(),
+                    date: this.scheduleDate.value,
+                    title: this.scheduleTitle.value,
+                    memo: this.scheduleMemo.value,
+                    color: document.getElementById('quickScheduleColor').value,
+                    type: 'schedule'
+                };
+
+                database.ref('schedules/' + schedule.id).set(schedule);
+
+                showAlert('일정이 추가되었습니다!');
+                closeModal();
+            });
+
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function showScheduleDetail(id) {
+            const s = schedules[id];
+            
+            if (!s) {
+                alert('일정을 찾을 수 없습니다');
+                return;
+            }
+
+            document.getElementById('modalTitle').textContent = '📅 ' + s.title;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="report-detail" style="border-left: 4px solid ${s.color}">
+                    <div style="background:#f8f9fa; padding:12px; border-radius:6px; margin-bottom:16px;">
+                        <strong>Date:</strong> ${s.date}
+                    </div>
+                    ${s.memo ? `
+                        <div style="background:white; border: 2px solid ${s.color}; padding:16px; border-radius:8px;">
+                            <div style="font-weight:600; margin-bottom:12px; color: ${s.color};">📝 Memo</div>
+                            <div style="white-space:pre-wrap; line-height: 1.6; color: #1a1a1a;">${s.memo}</div>
+                        </div>
+                    ` : `
+                        <div style="background:#f3f4f6; padding:16px; border-radius:8px; color:#6b7280;">
+                            메모가 없습니다
+                        </div>
+                    `}
+                    <div class="btn-group" style="margin-top:16px;">
+                        <button class="btn btn-primary btn-small" onclick="editSchedule('${s.id}')">Edit</button>
+                        <button class="btn btn-delete btn-small" onclick="deleteSchedule('${s.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function editSchedule(id) {
+            const s = schedules[id];
+            if (!s) return;
+
+            document.getElementById('modalTitle').textContent = '일정 수정';
+            document.getElementById('modalBody').innerHTML = `
+                <form id="editScheduleFormModal">
+                    <div class="form-group">
+                        <label>Date *</label>
+                        <input type="date" name="scheduleDate" value="${s.date}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Title *</label>
+                        <input type="text" name="scheduleTitle" value="${s.title}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Memo</label>
+                        <textarea name="scheduleMemo">${s.memo || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Color</label>
+                        <div class="color-palette" id="editScheduleColorPalette">
+                            <div class="color-option ${s.color === '#ef5350' ? 'selected' : ''}" data-color="#ef5350" style="background:#ef5350"></div>
+                            <div class="color-option ${s.color === '#ab47bc' ? 'selected' : ''}" data-color="#ab47bc" style="background:#ab47bc"></div>
+                            <div class="color-option ${s.color === '#5c6bc0' ? 'selected' : ''}" data-color="#5c6bc0" style="background:#5c6bc0"></div>
+                            <div class="color-option ${s.color === '#42a5f5' ? 'selected' : ''}" data-color="#42a5f5" style="background:#42a5f5"></div>
+                            <div class="color-option ${s.color === '#26a69a' ? 'selected' : ''}" data-color="#26a69a" style="background:#26a69a"></div>
+                            <div class="color-option ${s.color === '#66bb6a' ? 'selected' : ''}" data-color="#66bb6a" style="background:#66bb6a"></div>
+                            <div class="color-option ${s.color === '#ffca28' ? 'selected' : ''}" data-color="#ffca28" style="background:#ffca28"></div>
+                            <div class="color-option ${s.color === '#ff7043' ? 'selected' : ''}" data-color="#ff7043" style="background:#ff7043"></div>
+                        </div>
+                        <input type="hidden" id="editScheduleColorValue" value="${s.color}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Schedule</button>
+                </form>
+            `;
+
+            document.querySelectorAll('#editScheduleColorPalette .color-option').forEach(opt => {
+                opt.addEventListener('click', function() {
+                    document.querySelectorAll('#editScheduleColorPalette .color-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('editScheduleColorValue').value = this.dataset.color;
+                });
+            });
+
+            document.getElementById('editScheduleFormModal').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const updated = {
+                    id: id,
+                    date: this.scheduleDate.value,
+                    title: this.scheduleTitle.value,
+                    memo: this.scheduleMemo.value,
+                    color: document.getElementById('editScheduleColorValue').value,
+                    type: 'schedule'
+                };
+
+                database.ref('schedules/' + id).set(updated);
+
+                showAlert('일정이 수정되었습니다!');
+                closeModal();
+            });
+
+            document.getElementById('modal').classList.add('show');
+        }
+
+        function deleteSchedule(id) {
+            if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+
+            database.ref('schedules/' + id).remove();
+
+            showAlert('일정이 삭제되었습니다');
+            closeModal();
+        }
+
+        function editReport(id) {
+            const r = reports[id];
+            if (!r) return;
+
+            document.getElementById('editId').value = r.id;
+            document.querySelector('input[name="date"]').value = r.date;
+            document.querySelector('input[name="author"]').value = r.author;
+            
+            const sel = document.getElementById('projectSelect');
+            const exists = Array.from(sel.options).some(opt => opt.value === r.project);
+            
+            if (exists) {
+                sel.value = r.project;
+                document.getElementById('newProjectInput').style.display = 'none';
+            } else {
+                sel.value = '__new__';
+                document.getElementById('newProjectInput').style.display = 'block';
+                document.getElementById('newProjectInput').value = r.project;
+            }
+
+            document.querySelectorAll('#projectColorPalette .color-option').forEach(opt => {
+                opt.classList.remove('selected');
+                if (opt.dataset.color === r.color) opt.classList.add('selected');
+            });
+            document.getElementById('projectColor').value = r.color;
+
+            document.querySelector('select[name="status"]').value = r.status;
+            document.getElementById('progressSlider').value = r.progress || 0;
+            document.getElementById('progressValue').textContent = r.progress || 0;
+            document.querySelector('textarea[name="completed"]').value = r.completed;
+            document.querySelector('textarea[name="nextPlan"]').value = r.nextPlan || '';
+            document.querySelector('textarea[name="issues"]').value = r.issues || '';
+
+            const pg = document.getElementById('progressGroup');
+            const slider = document.getElementById('progressSlider');
+            if (r.status === 'progress') {
+                pg.style.display = 'block';
+                slider.disabled = false;
+            } else if (r.status === 'complete') {
+                pg.style.display = 'block';
+                slider.disabled = true;
+            } else {
+                pg.style.display = 'none';
+                slider.disabled = true;
+            }
+
+            document.getElementById('submitBtn').textContent = 'Update Report';
+
+            closeModal();
+            
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab')[0].classList.add('active');
+            document.getElementById('form').classList.add('active');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteReport(id) {
+            if (!confirm('이 보고서를 삭제하시겠습니까?')) return;
+
+            database.ref('reports/' + id).remove();
+
+            showAlert('보고서가 삭제되었습니다');
+            closeModal();
+        }
+
+        function deleteProject(name) {
+            if (!confirm(`"${name}" 프로젝트의 모든 보고서를 삭제하시겠습니까?`)) return;
+
+            const toDelete = Object.values(reports).filter(r => r.project === name);
+            toDelete.forEach(r => {
+                database.ref('reports/' + r.id).remove();
+            });
+
+            showAlert('프로젝트가 삭제되었습니다');
+            closeModal();
+        }
+
+        function addComment(rid) {
+            const text = document.getElementById(`comment-${rid}`).value.trim();
+            if (!text) return;
+
+            const r = reports[rid];
+            if (!r) return;
+
+            const comments = r.comments || [];
+            comments.push({
+                id: Date.now().toString(),
+                author: 'User',
+                text: text,
+                date: new Date().toLocaleString('ko-KR')
+            });
+
+            database.ref('reports/' + rid + '/comments').set(comments);
+            showProjectDetail(r.project);
+        }
+
+        function deleteComment(rid, cid) {
+            if (!confirm('이 댓글을 삭제하시겠습니까?')) return;
+
+            const r = reports[rid];
+            if (!r) return;
+
+            const comments = (r.comments || []).filter(c => c.id !== cid);
+            database.ref('reports/' + rid + '/comments').set(comments);
+            showProjectDetail(r.project);
+        }
+
+        function cancelEdit() {
+            document.getElementById('editId').value = '';
+            document.getElementById('submitBtn').textContent = 'Submit';
             document.getElementById('reportForm').reset();
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelector('input[name="date"]').value = today;
+            
+            document.getElementById('progressSlider').value = 0;
+            document.getElementById('progressValue').textContent = 0;
             document.getElementById('newProjectInput').style.display = 'none';
-        };
+            document.getElementById('progressGroup').style.display = 'block';
+            
+            document.querySelectorAll('#projectColorPalette .color-option').forEach(o => o.classList.remove('selected'));
+            document.querySelector('#projectColorPalette .color-option').classList.add('selected');
+            document.getElementById('projectColor').value = '#ffcdd2';
+        }
 
-        window.showAlert = function(msg) {
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function goToday() {
+            currentDate = new Date();
+            renderCalendar();
+        }
+
+        function showAlert(msg) {
             const alert = document.createElement('div');
             alert.className = 'alert';
             alert.textContent = msg;
             document.body.appendChild(alert);
             setTimeout(() => alert.remove(), 3000);
-        };
-
-        // 캘린더 네비게이션
-        window.changeMonth = function(delta) {
-            currentDate.setMonth(currentDate.getMonth() + delta);
-            renderCalendar();
-        };
-
-        window.goToday = function() {
-            currentDate = new Date();
-            renderCalendar();
-        };
-
-        // 완료된 프로젝트 보기 토글 (간단 구현)
-        window.showCompletedProjects = function() {
-            alert("완료된 프로젝트 보기 기능은 데이터 필터링으로 구현됩니다. (현재 목록에서 완료된 항목 표시됨)");
-        };
-
-        // 모달 외부 클릭 닫기
-        document.getElementById('modal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
-
+        }
     </script>
 </body>
 </html>
