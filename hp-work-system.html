@@ -16,6 +16,10 @@
         h1 { font-size: 28px; font-weight: 600; }
         .settings-btn { position: absolute; top: 24px; right: 24px; background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(90, 58, 90, 0.2); padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #5a3a5a; font-weight: 500; transition: all 0.2s; }
         .settings-btn:hover { background: rgba(255, 255, 255, 0.5); }
+        .notification-btn { position: fixed; bottom: 30px; right: 30px; background: #ffffff; border: none; padding: 16px; border-radius: 50%; cursor: pointer; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.3s; z-index: 1000; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .notification-btn:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+        .notification-badge { position: absolute; top: -5px; right: -5px; background: #d32f2f; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+        .notification-badge.hidden { display: none; }
         .settings-panel { position: absolute; top: 60px; right: 24px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 100; display: none; min-width: 280px; max-width: 280px; }
         .settings-panel.show { display: block; }
         .gradient-option { width: 50px; height: 50px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
@@ -72,12 +76,19 @@
         .calendar-nav { display: flex; gap: 12px; }
         .calendar-nav button { background: #f5f5f5; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; color: #1a1a1a; transition: all 0.2s; }
         .calendar-nav button:hover { background: #e5e5e5; }
+        .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 8px; text-align: center; font-weight: 600; font-size: 14px; color: #495057; }
+        .calendar-weekdays > div { padding: 8px 0; }
+        .calendar-weekdays .sunday { color: #d32f2f; }
+        .calendar-weekdays .saturday { color: #1976d2; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
         .calendar-day { aspect-ratio: 1; border: 1px solid #e5e5e5; border-radius: 8px; padding: 8px; position: relative; cursor: pointer; transition: all 0.2s; }
         .calendar-day:hover { background: #fafafa; }
         .calendar-day.other-month { opacity: 0.3; }
         .calendar-day.today { background: #fff3e0; border: 2px solid #ff9800; font-weight: 700; }
         .calendar-day.today .day-number { color: #ff6f00; }
+        .calendar-day.holiday { background: #ffebee; }
+        .calendar-day.holiday .day-number { color: #d32f2f; font-weight: 600; }
+        .holiday-name { font-size: 10px; color: #d32f2f; margin-top: 2px; font-weight: 600; }
         .day-number { font-size: 13px; font-weight: 500; }
         .day-events { margin-top: 4px; font-size: 10px; }
         .day-event { background: #ddd; padding: 2px 4px; border-radius: 4px; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
@@ -102,6 +113,15 @@
         .empty-state { text-align: center; padding: 60px 20px; color: #a3a3a3; font-size: 15px; }
         .alert { position: fixed; top: 24px; right: 24px; padding: 16px 24px; background: #1a1a1a; color: white; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); z-index: 2000; animation: slideIn 0.3s; font-size: 14px; font-weight: 500; }
         @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .notification-item { padding: 16px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: all 0.2s; display: flex; gap: 12px; align-items: start; }
+        .notification-item:hover { background: #fafafa; }
+        .notification-item:last-child { border-bottom: none; }
+        .notification-icon { font-size: 20px; min-width: 24px; }
+        .notification-content { flex: 1; }
+        .notification-title { font-weight: 600; font-size: 14px; color: #1a1a1a; margin-bottom: 4px; }
+        .notification-desc { font-size: 13px; color: #737373; }
+        .notification-time { font-size: 12px; color: #a3a3a3; margin-top: 4px; }
+        .notification-badge-new { background: #d32f2f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-left: 8px; }
         
         /* 멤버 카드 */
         .member-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
@@ -164,6 +184,7 @@
                     <div class="gradient-option" style="background: linear-gradient(135deg, #f857a6 0%, #ff5858 100%);" data-gradient="linear-gradient(135deg, #f857a6 0%, #ff5858 100%)" title="체리"></div>
                     <div class="gradient-option" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);" data-gradient="linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)" title="클라우드"></div>
                 </div>
+                <button class="btn btn-primary" id="saveBannerColorBtn" style="width: 100%; margin-top: 16px;">저장</button>
             </div>
         </header>
 
@@ -293,6 +314,15 @@
                         <button id="nextMonth">Next ▶</button>
                     </div>
                 </div>
+                <div class="calendar-weekdays">
+                    <div class="sunday">일</div>
+                    <div>월</div>
+                    <div>화</div>
+                    <div>수</div>
+                    <div>목</div>
+                    <div>금</div>
+                    <div class="saturday">토</div>
+                </div>
                 <div class="calendar-grid" id="calendarDays"></div>
                 <div class="event-list" id="eventList"></div>
             </div>
@@ -346,6 +376,19 @@
         </div>
     </div>
 
+    <!-- 알림 내역 모달 -->
+    <div class="modal" id="notificationModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">알림 내역</div>
+                <button class="modal-close" id="notificationModalClose">×</button>
+            </div>
+            <div class="modal-body" id="notificationList">
+                <!-- 알림 내역이 여기에 표시됩니다 -->
+            </div>
+        </div>
+    </div>
+
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyCLVDDh4h0cCd6HJ_mAKjHxB3joxhZiZzE",
@@ -362,6 +405,74 @@
         let reports = {};
         let schedules = {};
         let currentDate = new Date();
+        
+        // 한국 공휴일 (2025-2028년)
+        const koreanHolidays = {
+            // 2025년
+            '2025-01-01': '신정',
+            '2025-01-28': '설날 연휴',
+            '2025-01-29': '설날',
+            '2025-01-30': '설날 연휴',
+            '2025-03-01': '삼일절',
+            '2025-05-05': '어린이날',
+            '2025-05-06': '대체공휴일',
+            '2025-06-06': '현충일',
+            '2025-08-15': '광복절',
+            '2025-10-03': '개천절',
+            '2025-10-05': '추석 연휴',
+            '2025-10-06': '추석',
+            '2025-10-07': '추석 연휴',
+            '2025-10-08': '대체공휴일',
+            '2025-10-09': '한글날',
+            '2025-12-25': '크리스마스',
+            
+            // 2026년
+            '2026-01-01': '신정',
+            '2026-02-16': '설날 연휴',
+            '2026-02-17': '설날',
+            '2026-02-18': '설날 연휴',
+            '2026-03-01': '삼일절',
+            '2026-05-05': '어린이날',
+            '2026-06-06': '현충일',
+            '2026-08-15': '광복절',
+            '2026-09-24': '추석 연휴',
+            '2026-09-25': '추석',
+            '2026-09-26': '추석 연휴',
+            '2026-10-03': '개천절',
+            '2026-10-09': '한글날',
+            '2026-12-25': '크리스마스',
+            
+            // 2027년
+            '2027-01-01': '신정',
+            '2027-02-06': '설날',
+            '2027-02-07': '설날 연휴',
+            '2027-02-08': '설날 연휴',
+            '2027-03-01': '삼일절',
+            '2027-05-05': '어린이날',
+            '2027-06-06': '현충일',
+            '2027-08-15': '광복절',
+            '2027-10-03': '개천절',
+            '2027-10-09': '한글날',
+            '2027-10-14': '추석 연휴',
+            '2027-10-15': '추석',
+            '2027-10-16': '추석 연휴',
+            '2027-12-25': '크리스마스',
+            
+            // 2028년
+            '2028-01-01': '신정',
+            '2028-01-26': '설날',
+            '2028-01-27': '설날 연휴',
+            '2028-01-28': '설날 연휴',
+            '2028-03-01': '삼일절',
+            '2028-05-05': '어린이날',
+            '2028-06-06': '현충일',
+            '2028-08-15': '광복절',
+            '2028-10-02': '추석 연휴',
+            '2028-10-03': '추석',
+            '2028-10-04': '추석 연휴',
+            '2028-10-09': '한글날',
+            '2028-12-25': '크리스마스'
+        };
 
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
@@ -371,8 +482,17 @@
             const today = new Date().toISOString().split('T')[0];
             document.querySelector('input[name="date"]').value = today;
 
+            // 처음 방문하는 사용자의 경우 현재 시간을 lastVisit으로 설정
+            // 이렇게 하면 기존 데이터는 알림으로 표시되지 않고, 
+            // 새로 추가되는 데이터만 알림으로 표시됨
+            if (!localStorage.getItem('lastVisit')) {
+                localStorage.setItem('lastVisit', Date.now());
+            }
+
             setupEventListeners();
             setupFirebaseListener();
+            loadBannerColor();
+            updateNotificationBadge();
         }
 
         function setupFirebaseListener() {
@@ -386,6 +506,8 @@
                 if (document.querySelector('[data-tab="calendar"]').classList.contains('active')) {
                     renderCalendar();
                 }
+                // 일정 변경 시 알림 배지 업데이트
+                updateNotificationBadge();
             });
         }
 
@@ -394,6 +516,7 @@
             renderMemberList();
             renderCalendar();
             updateProjectSelectOptions();
+            updateNotificationBadge();
         }
 
         function setupEventListeners() {
@@ -416,10 +539,43 @@
                 document.getElementById('settingsPanel').classList.toggle('show');
             });
 
-            // 배너 색상 변경
+            // 알림 버튼
+            document.getElementById('notificationBtn').addEventListener('click', function() {
+                showNotificationModal();
+            });
+
+            // 알림 모달 닫기
+            document.getElementById('notificationModalClose').addEventListener('click', function() {
+                document.getElementById('notificationModal').classList.remove('show');
+                // 모달 닫을 때 마지막 확인 시간 업데이트
+                localStorage.setItem('lastVisit', Date.now());
+                updateNotificationBadge();
+            });
+
+            // 알림 모달 배경 클릭 시 닫기
+            document.getElementById('notificationModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                    localStorage.setItem('lastVisit', Date.now());
+                    updateNotificationBadge();
+                }
+            });
+
+            // 배너 색상 변경 (미리보기만)
             document.getElementById('settingsPanel').addEventListener('click', function(e) {
                 if (e.target.dataset.gradient) {
-                    document.querySelector('header').style.background = e.target.dataset.gradient;
+                    const gradient = e.target.dataset.gradient;
+                    document.querySelector('header').style.background = gradient;
+                }
+            });
+
+            // 배너 색상 저장 버튼
+            document.getElementById('saveBannerColorBtn').addEventListener('click', function() {
+                const currentGradient = document.querySelector('header').style.background;
+                if (currentGradient) {
+                    localStorage.setItem('bannerColor', currentGradient);
+                    showAlert('배너 색상이 저장되었습니다');
+                    document.getElementById('settingsPanel').classList.remove('show');
                 }
             });
 
@@ -565,6 +721,8 @@
                 if (reports[reportId] && reports[reportId].timestamp) {
                     reportData.timestamp = reports[reportId].timestamp;
                 }
+                // 수정 시간 추가
+                reportData.lastModified = Date.now();
                 
                 database.ref(`reports/${reportId}`).set(reportData)
                     .then(() => {
@@ -606,6 +764,11 @@
 
                 const projReports = projectGroups[projName];
                 const latest = projReports.sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+                // 완료된 프로젝트는 표시하지 않음 (Completed Projects로 이동)
+                if (latest.status === 'complete' && latest.progress === 100) {
+                    return;
+                }
 
                 const card = document.createElement('div');
                 card.className = 'project-card';
@@ -759,7 +922,16 @@
                     day.classList.add('today');
                 }
                 
+                // 공휴일 체크
+                const isHoliday = koreanHolidays[dateStr];
+                if (isHoliday) {
+                    day.classList.add('holiday');
+                }
+                
                 let html = `<span class="day-number">${i}</span>`;
+                if (isHoliday) {
+                    html += `<div class="holiday-name">${isHoliday}</div>`;
+                }
                 if (allDayItems.length > 0) {
                     html += `<div class="day-events">`;
                     allDayItems.slice(0, 3).forEach(item => {
@@ -1158,7 +1330,8 @@
                 id: Date.now().toString(),
                 author: author.trim(),
                 text: commentText,
-                date: new Date().toISOString().split('T')[0]
+                date: new Date().toISOString().split('T')[0],
+                timestamp: Date.now()  // 알림을 위한 timestamp 추가
             };
             
             if (!reports[reportId].comments) {
@@ -1294,6 +1467,198 @@
             return statusMap[status] || status;
         }
 
+        function updateNotificationBadge() {
+            const lastVisit = localStorage.getItem('lastVisit') || 0;
+            let newCount = 0;
+            
+            // 보고서 변경 카운트
+            Object.values(reports).forEach(report => {
+                // 새 보고서
+                if (report.timestamp > lastVisit && !report.lastModified) {
+                    newCount++;
+                }
+                // 보고서 수정
+                if (report.lastModified && report.lastModified > lastVisit) {
+                    newCount++;
+                }
+                
+                // 댓글도 체크
+                if (report.comments && Array.isArray(report.comments)) {
+                    report.comments.forEach(comment => {
+                        // timestamp가 있으면 사용, 없으면 date로 변환 (하위 호환성)
+                        const commentTime = comment.timestamp || new Date(comment.date).getTime();
+                        if (commentTime > lastVisit) {
+                            newCount++;
+                        }
+                    });
+                }
+            });
+            
+            // 일정 변경 카운트
+            Object.values(schedules).forEach(schedule => {
+                // 새 일정
+                if (schedule.timestamp > lastVisit && !schedule.lastModified) {
+                    newCount++;
+                }
+                // 일정 수정
+                if (schedule.lastModified && schedule.lastModified > lastVisit) {
+                    newCount++;
+                }
+            });
+            
+            const badge = document.getElementById('notificationBadge');
+            if (newCount > 0) {
+                badge.textContent = newCount > 99 ? '99+' : newCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        function loadBannerColor() {
+            const savedColor = localStorage.getItem('bannerColor');
+            if (savedColor) {
+                document.querySelector('header').style.background = savedColor;
+            }
+        }
+
+        function showNotificationModal() {
+            const lastVisit = localStorage.getItem('lastVisit') || 0;
+            const notifications = [];
+            
+            // 보고서 변경 수집
+            Object.entries(reports).forEach(([id, report]) => {
+                // 새 보고서 추가
+                if (report.timestamp > lastVisit && !report.lastModified) {
+                    notifications.push({
+                        type: 'report-new',
+                        icon: '📝',
+                        title: `새 보고서: ${report.project}`,
+                        desc: `${report.author}님이 보고서를 작성했습니다`,
+                        time: report.timestamp,
+                        data: { project: report.project }
+                    });
+                }
+                
+                // 보고서 수정
+                if (report.lastModified && report.lastModified > lastVisit) {
+                    notifications.push({
+                        type: 'report-edit',
+                        icon: '✏️',
+                        title: `보고서 수정: ${report.project}`,
+                        desc: `${report.author}님이 보고서를 수정했습니다`,
+                        time: report.lastModified,
+                        data: { project: report.project }
+                    });
+                }
+                
+                // 댓글 수집
+                if (report.comments && Array.isArray(report.comments)) {
+                    report.comments.forEach(comment => {
+                        // timestamp가 있으면 사용, 없으면 date로 변환 (하위 호환성)
+                        const commentTime = comment.timestamp || new Date(comment.date).getTime();
+                        if (commentTime > lastVisit) {
+                            notifications.push({
+                                type: 'comment',
+                                icon: '💬',
+                                title: `새 댓글: ${report.project}`,
+                                desc: `${comment.author}님이 댓글을 작성했습니다: "${comment.text.substring(0, 30)}${comment.text.length > 30 ? '...' : ''}"`,
+                                time: commentTime,
+                                data: { project: report.project }
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // 일정 변경 수집
+            Object.entries(schedules).forEach(([id, schedule]) => {
+                // 새 일정 추가
+                if (schedule.timestamp > lastVisit && !schedule.lastModified) {
+                    notifications.push({
+                        type: 'schedule-new',
+                        icon: '📅',
+                        title: `새 일정: ${schedule.title}`,
+                        desc: `${schedule.date}에 일정이 추가되었습니다`,
+                        time: schedule.timestamp,
+                        data: { date: schedule.date }
+                    });
+                }
+                
+                // 일정 수정
+                if (schedule.lastModified && schedule.lastModified > lastVisit) {
+                    notifications.push({
+                        type: 'schedule-edit',
+                        icon: '🔄',
+                        title: `일정 수정: ${schedule.title}`,
+                        desc: `${schedule.date} 일정이 수정되었습니다`,
+                        time: schedule.lastModified,
+                        data: { date: schedule.date }
+                    });
+                }
+            });
+            
+            // 시간순 정렬 (최신순)
+            notifications.sort((a, b) => b.time - a.time);
+            
+            // 모달에 표시
+            const listContainer = document.getElementById('notificationList');
+            
+            if (notifications.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state">새로운 알림이 없습니다</div>';
+            } else {
+                listContainer.innerHTML = '';
+                notifications.forEach(notif => {
+                    const item = document.createElement('div');
+                    item.className = 'notification-item';
+                    
+                    const timeAgo = getTimeAgo(notif.time);
+                    
+                    item.innerHTML = `
+                        <div class="notification-icon">${notif.icon}</div>
+                        <div class="notification-content">
+                            <div class="notification-title">${notif.title}<span class="notification-badge-new">NEW</span></div>
+                            <div class="notification-desc">${notif.desc}</div>
+                            <div class="notification-time">${timeAgo}</div>
+                        </div>
+                    `;
+                    
+                    // 클릭 시 해당 내용으로 이동
+                    item.addEventListener('click', function() {
+                        document.getElementById('notificationModal').classList.remove('show');
+                        if (notif.type.startsWith('report') || notif.type === 'comment') {
+                            showProjectDetail(notif.data.project);
+                        } else if (notif.type.startsWith('schedule')) {
+                            switchTab('calendar');
+                        }
+                        localStorage.setItem('lastVisit', Date.now());
+                        updateNotificationBadge();
+                    });
+                    
+                    listContainer.appendChild(item);
+                });
+            }
+            
+            document.getElementById('notificationModal').classList.add('show');
+        }
+
+        function getTimeAgo(timestamp) {
+            const now = Date.now();
+            const diff = now - timestamp;
+            
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return '방금 전';
+            if (minutes < 60) return `${minutes}분 전`;
+            if (hours < 24) return `${hours}시간 전`;
+            if (days < 7) return `${days}일 전`;
+            
+            const date = new Date(timestamp);
+            return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+        }
+
         function addScheduleForDate(dateStr) {
             openScheduleModal(dateStr);
         }
@@ -1374,7 +1739,12 @@
             };
             
             if (scheduleId) {
-                // 수정
+                // 수정 - 원본 timestamp 유지하고 lastModified 추가
+                if (schedules[scheduleId] && schedules[scheduleId].timestamp) {
+                    scheduleData.timestamp = schedules[scheduleId].timestamp;
+                }
+                scheduleData.lastModified = Date.now();
+                
                 database.ref(`schedules/${scheduleId}`).set(scheduleData)
                     .then(() => {
                         showAlert('일정이 수정되었습니다');
@@ -1426,5 +1796,11 @@
                 });
         }
     </script>
+    
+    <!-- 우측 하단 고정 알림 버튼 -->
+    <button class="notification-btn" id="notificationBtn">
+        🔔
+        <span class="notification-badge hidden" id="notificationBadge">0</span>
+    </button>
 </body>
 </html>
