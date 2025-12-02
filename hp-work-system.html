@@ -148,7 +148,7 @@
         .schedule-color-option { width: 100%; aspect-ratio: 1; border-radius: 8px; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; }
         .schedule-color-option:hover { transform: scale(1.1); }
         .schedule-color-option.selected { border-color: #1a1a1a; box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.1); }
-        .notice-bar { background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%); color: white; padding: 12px 24px; text-align: center; position: relative; overflow: hidden; min-height: 40px; display: flex; align-items: center; justify-content: center; }
+        .notice-bar { background: #f5f5f5; color: #1a1a1a; padding: 12px 24px; text-align: center; position: relative; overflow: hidden; min-height: 40px; display: flex; align-items: center; justify-content: center; }
         .notice-content { display: flex; align-items: center; justify-content: center; gap: 8px; }
         .notice-icon { font-size: 18px; animation: bell 2s infinite; }
         @keyframes bell { 0%, 100% { transform: rotate(0deg); } 10%, 30% { transform: rotate(-10deg); } 20%, 40% { transform: rotate(10deg); } }
@@ -198,17 +198,6 @@
                 <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e5e5;">
                 
                 <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">공지사항 관리</div>
-                
-                <div style="font-size: 13px; color: #737373; margin-bottom: 8px;">배경 색상</div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;">
-                    <div class="gradient-option notice-bg-option" style="background: linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%);" data-gradient="linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)" title="파스텔 핑크"></div>
-                    <div class="gradient-option notice-bg-option" style="background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);" data-gradient="linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)" title="파스텔 블루"></div>
-                    <div class="gradient-option notice-bg-option" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);" data-gradient="linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)" title="파스텔 피치"></div>
-                    <div class="gradient-option notice-bg-option" style="background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);" data-gradient="linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)" title="파스텔 그린"></div>
-                </div>
-                <button class="btn btn-primary" id="saveNoticeBgBtn" style="width: 100%; margin-bottom: 16px;">배경색 저장</button>
-                
-                <div style="font-size: 13px; color: #737373; margin-bottom: 8px;">공지 내용</div>
                 <div id="noticeInputList" style="margin-bottom: 12px;">
                     <!-- 공지사항 입력 필드가 여기에 추가됩니다 -->
                 </div>
@@ -443,7 +432,6 @@
         let reports = {};
         let schedules = {};
         let notices = [];
-        let noticeBgColor = 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)'; // 기본 색상 (파스텔 핑크)
         let currentNoticeIndex = 0;
         let noticeInterval = null;
         let currentDate = new Date();
@@ -555,10 +543,6 @@
             database.ref('notices').on('value', (snapshot) => {
                 const noticesData = snapshot.val();
                 notices = noticesData ? noticesData.list || [] : [];
-                noticeBgColor = noticesData && noticesData.bgColor ? noticesData.bgColor : 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)';
-                
-                // 배경 색상 적용
-                document.getElementById('noticeBar').style.background = noticeBgColor;
                 
                 renderNotices();
                 startNoticeSlideshow();
@@ -637,29 +621,6 @@
 
             // 공지사항 추가 버튼
             document.getElementById('addNoticeInputBtn').addEventListener('click', addNoticeInput);
-            
-            // 공지사항 배경 색상 선택 (미리보기)
-            document.getElementById('settingsPanel').addEventListener('click', function(e) {
-                if (e.target.classList.contains('notice-bg-option')) {
-                    const gradient = e.target.dataset.gradient;
-                    // 미리보기로 공지사항 바 배경 변경
-                    document.getElementById('noticeBar').style.background = gradient;
-                    // 임시로 변수에 저장
-                    noticeBgColor = gradient;
-                }
-            });
-            
-            // 공지사항 배경색 저장 버튼
-            document.getElementById('saveNoticeBgBtn').addEventListener('click', function() {
-                database.ref('notices/bgColor').set(noticeBgColor)
-                    .then(() => {
-                        showAlert('배경색이 저장되었습니다');
-                    })
-                    .catch(error => {
-                        console.error('배경색 저장 실패:', error);
-                        showAlert('저장에 실패했습니다');
-                    });
-            });
             
             // 공지사항 저장 버튼
             document.getElementById('saveNoticesBtn').addEventListener('click', saveNotices);
